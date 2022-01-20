@@ -1,4 +1,4 @@
-setwd("~/Desktop/momAI")
+#setwd("~/Desktop/momAI")
 
 N <- 200 # number of points per class
 D <- 50 # dimensionality

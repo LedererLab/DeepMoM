@@ -4,12 +4,18 @@ This repository provides the implementations of the methods described in [DeepMo
 
 ## Estimator
 
-We provide an example code in `MOM_ estimator.Rmd` for computing median of means estimator for Relu networks. Developed for `R 4.1.2`.
+We provide an example code in `TrainNN.R` for computing DeepMoM estimator with Relu activation. Developed for `R 4.1.2`.
 
 
 ## Simulations
 
-We provide an example code in `SimulationStudy.Rmd` for a comparison of least squared estimator and median of means estimator for Relu networks. Developed for `R 4.1.2`.
+We provide an example code in `SimulationStudy.R` for a comparison of least-squars, Huber, and least absolute deviation estimators with ReLU based DeepMoM estimators for regression type problems and another code in `Classifier.R` for comparison of soft-max cross entropy estimators and ReLU based DeepMoM estimators for classification tasks. 
+
+## Applications
+
+We provide an example code in `TCGA.R` to apply the DeepMoM structure on seven TCGA data sets.
+
+The data is available in `TCGAlist.RData`.
 
 ## Repository authors 
 
@@ -19,32 +25,19 @@ We provide an example code in `SimulationStudy.Rmd` for a comparison of least sq
 
 ## Other files
 
-**Backpropagation** : Applying the back propagation with respect to squared loss for Relu network.
+**BackPropN.R** : Compute the derivative of neural network with respect to each weight matrix by back propagation.
 
-**BackL1** : Applying the back propagation with respect to L1 loss for Relu network.
+**FeedForwardNN.R** : Compute the output of the neural network by feed forwardd method of the neural network.
 
-**BackHuber** : Applying the back propagation with respect to Huber loss for 
-Relu network.
+**l1_derivative.R** : Compute the derivative of L1 loss function.
 
-**DataGeneration** : Generating sample data.
+**huber_derivative.R** : Compute the derivative of Huber loss     function.
 
-**Feedforward** : Applying the feed forward computation for a given neural network.
+**huber_loss.R** : Compute the value of Huber loss function.
 
-**Loss** : The computation of sum of squared loss for a given neural network.
+**mom.R** : Find the block of data that achieve the median of empirical means. 
 
-**MOM** : Implementing the median of means principle.
-
-**Relu** : The Relu activate function.
-
-**ReluDerivative** : The derivative of Relu activate function.
-
-**L1_erivative** : The derivative of L1 loss.
-
-**Huber_erivative** : The derivative of Huber loss.
-
-**my_nn** : A list represents a neural network.
-
-**CVmom** : Selecting the number of blocks for applying median of means principle by cross validation.
+**Group.R** : Partition the data into some groups.
 
 ## Supported languages and platforms
 
@@ -60,7 +53,7 @@ The HDIM package is licensed under the MIT license. To
 view the MIT license please consult `LICENSE.txt`.
 
 ## References
- [Robust Deep Learning With Mathematical Guarantees](https://johanneslederer.com/)
+ [DeepMoM: Robust Deep Learning With Median-of-Means](https://arxiv.org/abs/2105.14035)
  
- Cite as "S. Huang, F. Xie, and J. Lederer. Robust Deep Learning With Mathematical Guarantees.".
+ Cite as "S. Huang, and J. Lederer. DeepMoM: Robust Deep Learning With Median-of-Means.".
 

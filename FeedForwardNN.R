@@ -4,8 +4,8 @@
 
 FeedForwardNN <- function(X, para=list(), class=FALSE, class.score=FALSE){
   # Description :
-  #               Compute the output of the neural netowtk by feed forwardd 
-  #               method derivative of neural network with respect to each 
+  #               Compute the output of the neural network by feed forwardd 
+  #               method of the neural network.
   # Usage : 
   #         FeedForwardNN(X, para=list(), class=FALSE, class.score=FALSE)
   # Arguments : 
