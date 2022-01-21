@@ -3,9 +3,8 @@
 ############################
 
 TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL, 
-                    stop.i.loss=1e-5, stop.i.update=1e-5, MOM=FALSE, k=NULL, 
-                    loss.f=NULL, q=NULL, bias=FALSE, class=FALSE, beta=1, 
-                    qs=NULL){
+                    MOM=FALSE, k=NULL, loss.f=NULL, q=NULL, bias=FALSE, 
+                    class=FALSE, beta=1, qs=NULL){
   # Description :
   #               Train the neural network under the DeepMoM structure.   
   # Usage : 
@@ -180,8 +179,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       }
       
       if(isTRUE(MOM==TRUE)){
-        #index <- sample(c(1:dim(X)[1]),batch,replace=FALSE)
-        
         if(isTRUE(i<=floor(dim(X)[1]/batch))){
           index <- Index[[i]]
         } else {
@@ -210,8 +207,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
           para2[[j]][[2]] <- matrix(rep(B.trim,length(index)),nrow=length(index),byrow=TRUE)
         }
       }else{
-        #index <- sample(c(1:dim(X)[1]),batch,replace=FALSE)
-        
         if(isTRUE(i<=floor(dim(X)[1]/batch))){
           index <- Index[[i]]
         } else {
@@ -258,23 +253,9 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         if(isTRUE(loss.f=="ls")){
           L <- c(L, sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)/(dim(X.original)[1]))
         }else if(isTRUE(loss.f=="l1")){
-          #L <- c(L, sum(abs(y.original-FeedForwardNN(X=X.original,para=para,class=class,class.score=FALSE)))/(dim(X)[1]))
           L <- c(L, sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)/(dim(X.original)[1]))
-          #if(isTRUE(i%%40000==0)){
-          #  alpha <- alpha/3
-          #}
-          #if(isTRUE((i-40000)%%1000==0)&isTRUE(i>40000)){
-          #  alpha <- alpha/3
-          #}
         }else if(isTRUE(loss.f=="huber")){
-          #L <- c(L, sum(huber_loss(y.original-FeedForwardNN(X=X.original,para=para,class=class,class.score=FALSE),q))/(dim(X)[1]))
           L <- c(L, sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)/(dim(X.original)[1]))
-          #if(isTRUE(i%%40000==0)){
-          #  alpha <- 1e-8
-          #}
-          #if(isTRUE((i-40000)%%1000==0)&isTRUE(i>40000)){
-          #  alpha <- alpha/3
-          #}
         }
       }
       
@@ -288,20 +269,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         break
       }
       
-      #if(isTRUE(class)){
-      #  if(isTRUE(i>=100)){
-      #    if(isTRUE(mean(L[(i-99):i])<=-log(0.975))&isTRUE(L[i]<=-log(0.975))){
-      #      break
-      #    }
-      #  }
-      #  if(isTRUE(accuracy>=0.99)){
-      #    break
-      #  }
-      #}else{
-      #  if(isTRUE(L[i]<=1e-1)){
-      #    break
-      #  }
-      #}
       
       if(isTRUE(class)&isTRUE(i%%epoch==0)){
         print(paste("Epoch", (i/epoch),': loss.softmax', (sum(A[(i+1-epoch):i]))))
@@ -317,19 +284,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       
       # Stopping criteria
       
-      #if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-      #  if(isTRUE(abs((sum(L[(i+1-2*epoch):(i-epoch)])-sum(L[(i+1-epoch):i]))/sum(L[(i+1-2*epoch):(i-epoch)]))<=1e-4)){
-      #    #break
-      #    alpha <- alpha / 2
-      #  }
-      #}
-      
-      #if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-      #  if(isTRUE(abs((sum(L[(i+1-2*epoch):(i-epoch)])-sum(L[(i+1-epoch):i]))/sum(L[(i+1-2*epoch):(i-epoch)]))<=1e-6)){
-      #    break
-      #  }
-      #}
-      
       if(isTRUE(class)){
         if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
           if(isTRUE(sum(L[(i+1-epoch):i])<=(-log(0.975)))){
@@ -343,106 +297,8 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
           }
         }
       }
-      
-      
-      
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(L[(i-49):i])-mean(L[(i-99):(i-50)]))/abs(mean(L[(i-99):(i-50)])))<=stop.i.loss)){
-      #    break
-      #  }
-      #}
-      
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(update.par1[(i-49):i])-mean(update.par1[(i-99):(i-50)]))/abs(mean(update.par1[(i-99):(i-50)])))<=stop.i.update)){
-      #    break
-      #  }
-      #}
     }else{
       # Monitor loss
-      
-      #if(isTRUE(class)){
-      #  score1 <- FeedForwardNN(X=X,para=para,class=class,class.score=TRUE)
-      #  exp_scores <- exp(score1)
-      #  probs <- exp_scores / rowSums(exp_scores)
-      #  corect_logprobs <- -log(probs)
-      #  data_loss <- sum(corect_logprobs*y)/num.obs
-      #  L.mom <- c(L.mom, data_loss)
-      #}else{
-      #  L.mom1 <- sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)/num.obs
-      #  L.mom <- c(L.mom,(L.mom1))
-      #}
-      
-      
-      #if(isTRUE(L.mom[i]=="NaN")|isTRUE(L.mom[i]==Inf)|isTRUE(L.mom[i]==-Inf)|isTRUE(is.na(L.mom[i]))){
-      #  para <- paraNA
-      #  break
-      #}
-      
-      #if(isTRUE(is.na(update1.par1[i]))){
-      #  para <- paraNA
-      #  break
-      #}
-      
-      #if(isTRUE(class)){
-      #  score2 <- FeedForwardNN(X=X,para=para2,class=class,class.score=TRUE)
-      #  exp_scores <- exp(score2)
-      #  probs <- exp_scores / rowSums(exp_scores)
-      #  corect_logprobs <- -log(probs)
-      #  data_loss <- sum(corect_logprobs*y)/num.obs
-      #  L2.mom <- c(L2.mom, data_loss)
-      #}else{
-      #  L2.mom2 <- sum((y-FeedForwardNN(X=X,para=para2,class=class,class.score=FALSE))^2)/num.obs
-      #  L2.mom <- c(L2.mom,(L2.mom2))
-      #}
-      
-      
-      #if(isTRUE(L2.mom[i]=="NaN")|isTRUE(L2.mom[i]==Inf)|isTRUE(L2.mom[i]==-Inf)|isTRUE(is.na(L2.mom[i]))){
-      #  para <- paraNA
-      #  break
-      #}
-      
-      #if(isTRUE(is.na(update2.par1[i]))){
-      #  para <- paraNA
-      #  break
-      #}
-
-      #print(paste("iteration", i,': loss.mom', L.mom[i]))
-      
-      # Stopping criteria one
-  
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(L.mom[(i-49):i])-mean(L.mom[(i-99):(i-50)]))/abs(mean(L.mom[(i-99):(i-50)])))<=stop.i.loss)){
-      #    break
-      #  }
-      #}
-      
-      
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(update1.par1[(i-49):i])-mean(update1.par1[(i-99):(i-50)]))/abs(mean(update1.par1[(i-99):(i-50)])))<=stop.i.update)){
-      #    break
-      #  }
-      #}
-      
-      # Stopping criteria two
-      
-      #if(isTRUE(i>=2)){
-      #  if(isTRUE(abs(update2.par1[i]-update2.par1[i-1])<=stop.i.update)){
-      #    break
-      #  }
-      #}
-      
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(L2.mom[(i-49):i])-mean(L2.mom[(i-99):(i-50)]))/abs(mean(L2.mom[(i-99):(i-50)])))<=stop.i.loss)){
-      #    break
-      #  }
-      #}
-      
-      
-      #if(isTRUE(is.na(i))){
-      #  if(isTRUE((abs(mean(update2.par1[(i-49):i])-mean(update2.par1[(i-99):(i-50)]))/abs(mean(update2.par1[(i-99):(i-50)])))<=stop.i.update)){
-      #    break
-      #  }
-      #}
     }
     
     # MOM
@@ -497,7 +353,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       }else{
         L.mom1 <- sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)
         L.mom <- c(L.mom, L.mom1)
-        #IC.mom <- c(IC.mom, length(y))
       }
       
       if(isTRUE(L.mom[i]=="NaN")|isTRUE(L.mom[i]==Inf)|isTRUE(L.mom[i]==-Inf)|isTRUE(is.na(L.mom[i]))){
@@ -512,25 +367,9 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       
       if(isTRUE(class)&isTRUE(i%%epoch==0)){
         print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(A.mom[(i+1-epoch):i])/sum(IC.mom[(i+1-epoch):i]))))
-        #print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(A.mom[(i+1-epoch):i])/length(classIndex))))
       }else if(isTRUE(i%%epoch==0)){
         print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(L.mom[(i+1-epoch):i]))))
       }
-      
-      #if(isTRUE(class)){
-      #  if(isTRUE(i>=100)){
-      #    if(isTRUE(mean(L.mom[(i-99):i])<=-log(0.975))&isTRUE(L.mom[i]<=-log(0.975))){
-      #      break
-      #    }
-      #  }
-      #  if(isTRUE(accuracy>=0.99)){
-      #    break
-      #  }
-      #}else{
-      #  if(isTRUE(L.mom[i]<=1e-1)){
-      #    break
-      #  }
-      #}
       
       # First bias parameters 
       for(j in 1:length(para)){
@@ -593,18 +432,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         break
       }
       
-      #if(isTRUE(class)){
-      #  if(isTRUE(i>=100)){
-      #    if(isTRUE(mean(L2.mom[(i-99):i])<=-log(0.975))&isTRUE(L2.mom[i]<=-log(0.975))){
-      #      break
-      #    }
-      #  }
-      #}else{
-      #  if(isTRUE(L2.mom[i]<=1e-1)){
-      #    break
-      #  }
-      #}
-      
       if(isTRUE(is.na(update2.par1[i]))){
         para <- paraNA
         break
@@ -631,25 +458,6 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         B2.trim <- para2[[j]][[2]][1,]
         para2[[j]][[2]] <- matrix(rep(B2.trim,num.obs),nrow=num.obs,byrow=TRUE)
       }
-      
-      #if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-      #  if(isTRUE(abs((sum(L.mom[(i+1-2*epoch):(i-epoch)])-sum(L.mom[(i+1-epoch):i]))/sum(L.mom[(i+1-2*epoch):(i-epoch)]))<=1e-4)){
-      #    #break
-      #    alpha <- alpha / 2
-      #  }
-      #}
-      
-      #if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-      #  if(isTRUE(abs((sum(L.mom[(i+1-2*epoch):(i-epoch)])-sum(L.mom[(i+1-epoch):i]))/sum(L.mom[(i+1-2*epoch):(i-epoch)]))<=1e-6)){
-      #    break
-      #  }
-      #}
-      
-      #if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-      #  if(isTRUE(abs((sum(L2.mom[(i+1-2*epoch):(i-epoch)])-sum(L2.mom[(i+1-epoch):i]))/sum(L2.mom[(i+1-2*epoch):(i-epoch)]))<=1e-6)){
-      #    break
-      #  }
-      #}
       
       if(isTRUE(class)){
         if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){

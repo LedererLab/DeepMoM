@@ -67,7 +67,6 @@ BackPropNN <- function(y, X, para=list(), alpha, loss.f=NULL, q=NULL, bias=FALSE
       D[[(l+2)]] <- (-1/num.obs)*l1_derivative(as.vector(y-A[[(l+2)]]))
       D[[(l+2)]] <- matrix(D[[(l+2)]], nrow=num.obs)
     }else if(isTRUE(loss.f=="huber")){
-      #q_advice <- sd(as.vector(y-A[[(l+2)]]))
       D[[(l+2)]] <- (-1/num.obs)*huber_derivative(as.vector(y-A[[(l+2)]]),q)
       D[[(l+2)]] <- matrix(D[[(l+2)]], nrow=num.obs)
     }

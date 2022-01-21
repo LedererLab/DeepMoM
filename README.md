@@ -55,5 +55,5 @@ view the MIT license please consult `LICENSE.txt`.
 ## References
  [DeepMoM: Robust Deep Learning With Median-of-Means](https://arxiv.org/abs/2105.14035)
  
- Cite as "S. Huang, and J. Lederer. DeepMoM: Robust Deep Learning With Median-of-Means.".
+ Cite as "S. Huang and J. Lederer. DeepMoM: Robust Deep Learning With Median-of-Means.".
 
