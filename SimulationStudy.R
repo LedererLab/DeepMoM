@@ -6,8 +6,8 @@
 num.obs <- 1000 # Number of samples
 num.par <- 50 # Dimension of input vector
 K <- 1 # Number of classes
-l <- 5 # Number of hidden layers (number of weight matrices-1)
-num.neurons <- 50 # Number of neurons in each hidden layer
+l <- 7 # Number of hidden layers (number of weight matrices-1)
+num.neurons <- 30 # Number of neurons in each hidden layer
 #min.neurons <- 5
 prop <- 0.95 # Proportion of the informative samples
 b <- floor(0.15*num.obs) # Batch size for stochastic gradient descent
@@ -36,26 +36,28 @@ set.seed(2021313) # Set the random seed for reproducible research
 
 data_all <- list()
 for(s in 1:num.sim){
-  X <- matrix(runif(num.obs*num.par,-1,1),nrow=num.obs)
-  X.test <- matrix(runif(num.test*num.par,-1,1),nrow=num.test)
+  X <- matrix(runif(num.obs*num.par, -1, 1), nrow=num.obs)
+  X.test <- matrix(runif(num.test*num.par, -1, 1), nrow=num.test)
   
-  P <- rep(num.neurons,l)
-  P <- c(num.par,P,K)
+  P <- rep(num.neurons, l)
+  P <- c(num.par, P, K)
   
   Para <- list()
   
   for(i in 1:(l+1)){
     Para[[i]] <- list()
-    Para[[i]][[1]] <- matrix(runif(P[i]*P[i+1],-1,1),nrow=P[i])
+    Para[[i]][[1]] <- matrix(runif(P[i]*P[i+1], -1, 1), nrow=P[i])
   }
   
   for(i in 1:(l+1)){
-    Para[[i]][[2]] <- rep(runif(1,-1,1),P[(i+1)])
-    Para[[i]][[2]] <- matrix(rep(Para[[i]][[2]],num.obs),nrow=num.obs,byrow=TRUE)
+    Para[[i]][[2]] <- rep(runif(1, -1, 1), P[(i+1)])
+    Para[[i]][[2]] <- matrix(rep(Para[[i]][[2]], num.obs), nrow=num.obs, 
+                             byrow=TRUE)
   }
   
-  signal <- FeedForwardNN(X, para=Para,class=FALSE,class.score=FALSE) 
-  signal.test <- FeedForwardNN(X.test, para=Para,class=FALSE,class.score=FALSE)
+  signal <- FeedForwardNN(X, para=Para, class=FALSE, class.score=FALSE) 
+  signal.test <- FeedForwardNN(X.test, para=Para, class=FALSE, 
+                               class.score=FALSE)
 
   Data <- list()
   Data[[1]] <- X
@@ -99,14 +101,16 @@ for(s in 1:num.sim){
     y <- signal+rt(num.obs, DF, ncp=0)
   }else if(isTRUE(NoiseX)){
     noise <- sample(c(1:num.obs), floor((1-prop)*num.obs), replace = FALSE)
-    X[noise, ] <- X[noise, ] + matrix(rnorm(num.par*length(noise),0,1), nrow=length(noise), ncol=num.par)
-    y <- signal + rnorm(dim(X)[1],0,1)
+    X[noise, ] <- X[noise, ] + matrix(rnorm(num.par*length(noise),0,1), 
+                                      nrow=length(noise), ncol=num.par)
+    y <- signal + rnorm(dim(X)[1], 0, 1)
   }else{
     good <- sample(c(1:dim(X)[1]), floor(dim(X)[1]*prop), replace=FALSE)
-    u.good <- rnorm(length(good),0,1)
-    u.bad <- runif((dim(X)[1]-length(good)),(3*max(abs(signal))),(5*max(abs(signal))))
-    y[good] <- signal[good]+u.good
-    y[-good] <- signal[-good]+u.bad
+    u.good <- rnorm(length(good), 0, 1)
+    u.bad <- runif((dim(X)[1]-length(good)), (3*max(abs(signal))), 
+                   (5*max(abs(signal))))
+    y[good] <- signal[good] + u.good
+    y[-good] <- signal[-good] + u.bad
   }
   
   set.seed(NULL)
@@ -117,10 +121,15 @@ for(s in 1:num.sim){
   
   alpha <- 1e-3
   repeat{
-    Pre_Para.ls <- TrainNN(y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=FALSE,k=1,loss.f="ls",q=NULL,bias=TRUE,class=FALSE,beta=scale)
-    train.test <- sum((signal-FeedForwardNN(X,para=Pre_Para.ls[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+    Pre_Para.ls <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, random=TRUE, 
+                           batch=b, MOM=FALSE, k=1, loss.f="ls", q=NULL, 
+                           bias=TRUE, class=FALSE, beta=scale)
+    train.test <- sum((signal - FeedForwardNN(X, para=Pre_Para.ls[[1]], 
+                                              class=FALSE, 
+                                              class.score=FALSE))^2)/num.obs
     
-    if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
+    if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|
+       isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
       alpha <- alpha/10
       next
     }else{
@@ -128,7 +137,9 @@ for(s in 1:num.sim){
     }
   }
   
-  Prediction.ls <- sum((signal.test-FeedForwardNN(X.test,para=Pre_Para.ls[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+  Prediction.ls <- sum((signal.test-FeedForwardNN(X.test, para=Pre_Para.ls[[1]], 
+                                                  class=FALSE, 
+                                                  class.score=FALSE))^2)/num.obs
   alpha.ls <- alpha
   LossTracking.ls <- Pre_Para.ls[[2]]
   
@@ -144,10 +155,17 @@ for(s in 1:num.sim){
   for(i in 1:length(Blocks)){
     alpha <- 1e-3
     repeat{
-      Pre_Para.mom <- TrainNN(y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,bias=TRUE,class=FALSE,beta=scale)
-      train.test <- sum((signal-FeedForwardNN(X,para=Pre_Para.mom[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+      Pre_Para.mom <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, 
+                              random=TRUE, batch=b, MOM=TRUE, k=Blocks[i], 
+                              loss.f="ls", q=NULL, bias=TRUE, class=FALSE, 
+                              beta=scale)
+      train.test <- sum((signal-FeedForwardNN(X, para=Pre_Para.mom[[1]], 
+                                              class=FALSE, 
+                                              class.score=FALSE))^2)/num.obs
       
-      if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(is.na(train.test))){
+      if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|
+         isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|
+         isTRUE(is.na(train.test))){
         alpha <- alpha/10
         next
       }else{
@@ -155,10 +173,12 @@ for(s in 1:num.sim){
       }
     }
     
-    Prediction <- sum((signal.test-FeedForwardNN(X.test,para=Pre_Para.mom[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+    Prediction <- sum((signal.test-FeedForwardNN(X.test, para=Pre_Para.mom[[1]], 
+                                                 class=FALSE, 
+                                                 class.score=FALSE))^2)/num.obs
     LossTracking.mom[[i]] <- Pre_Para.mom[[2]]
-    Prediction.mom <- c(Prediction.mom,Prediction)
-    alpha.mom <- c(alpha.mom,alpha)
+    Prediction.mom <- c(Prediction.mom, Prediction)
+    alpha.mom <- c(alpha.mom, alpha)
     
     error.mom[[2]][[s]] <- list()
     error.mom[[2]][[s]][[i]] <-  LossTracking.mom[[i]]
@@ -170,10 +190,15 @@ for(s in 1:num.sim){
   # L1  
   alpha <- 1e-6
   repeat{
-    Pre_Para.l1 <- TrainNN(y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=FALSE,k=NULL,loss.f="l1",q=NULL,bias=TRUE,class=FALSE,beta=scale)
-    train.test <- sum((signal-FeedForwardNN(X,para=Pre_Para.l1[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+    Pre_Para.l1 <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, random=TRUE, 
+                           batch=b, MOM=FALSE, k=NULL, loss.f="l1", q=NULL, 
+                           bias=TRUE, class=FALSE, beta=scale)
+    train.test <- sum((signal-FeedForwardNN(X,para=Pre_Para.l1[[1]], 
+                                            class=FALSE, 
+                                            class.score=FALSE))^2)/num.obs
     
-    if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
+    if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|
+       isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
       alpha <- alpha/10
       next
     }else{
@@ -181,7 +206,9 @@ for(s in 1:num.sim){
     }
   }
   
-  Prediction.l1 <- sum((signal.test-FeedForwardNN(X.test,para=Pre_Para.l1[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+  Prediction.l1 <- sum((signal.test-FeedForwardNN(X.test, para=Pre_Para.l1[[1]], 
+                                                  class=FALSE, 
+                                                  class.score=FALSE))^2)/num.obs
   alpha.l1 <- alpha
   LossTracking.l1 <- Pre_Para.l1[[2]]
   
@@ -198,10 +225,16 @@ for(s in 1:num.sim){
     alpha <- 1e-6
     qt <- as.numeric(quantile(abs(y), prob=Q[i]))
     repeat{
-      Pre_Para.huber <- TrainNN(y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=FALSE,k=NULL,loss.f="huber",q=qt,bias=TRUE,class=FALSE,beta=scale)
-      train.test <- sum((signal-FeedForwardNN(X,para=Pre_Para.huber[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+      Pre_Para.huber <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, 
+                                random=TRUE, batch=b, MOM=FALSE, k=NULL, 
+                                loss.f="huber", q=qt, bias=TRUE, class=FALSE, 
+                                beta=scale)
+      train.test <- sum((signal-FeedForwardNN(X, para=Pre_Para.huber[[1]], 
+                                              class=FALSE, 
+                                              class.score=FALSE))^2)/num.obs
       
-      if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
+      if(isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|
+         isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)){
         alpha <- alpha/10
         next
       }else{
@@ -209,10 +242,13 @@ for(s in 1:num.sim){
       }
     }
     
-    Prediction <- sum((signal.test-FeedForwardNN(X.test,para=Pre_Para.huber[[1]],class=FALSE,class.score=FALSE))^2)/num.obs
+    Prediction <- sum((signal.test-FeedForwardNN(X.test, 
+                                                 para=Pre_Para.huber[[1]], 
+                                                 class=FALSE, 
+                                                 class.score=FALSE))^2)/num.obs
     LossTracking.huber[[i]] <- Pre_Para.huber[[2]]
-    Prediction.huber <- c(Prediction.huber,Prediction)
-    alpha.huber <- c(alpha.huber,alpha)
+    Prediction.huber <- c(Prediction.huber, Prediction)
+    alpha.huber <- c(alpha.huber, alpha)
     
     
     error.huber[[2]][[s]] <- list()

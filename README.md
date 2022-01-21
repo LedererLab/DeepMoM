@@ -49,7 +49,7 @@ This repository does not depend on any R libraries or external sources.
 
 ## Licensing
 
-The HDIM package is licensed under the MIT license. To
+All codes are licensed under the MIT license. To
 view the MIT license please consult `LICENSE.txt`.
 
 ## References

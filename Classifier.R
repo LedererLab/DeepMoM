@@ -2,16 +2,16 @@
 ### Classification of Spiral Data ##
 ####################################
 
-N <- 200 # number of points per class
-K <- 5 # number of classes
+N <- 200 # Number of samples per class
+K <- 5 # Number of classes
 
-num.neurons <- 150
-l <- 2
+num.neurons <- 150 # Number of neurons in each hidden layer
+l <- 2 # Number of hidden layer
 
-scale <- 1
-prop <- 0.75
-plot <- TRUE
-NoiseX <- FALSE
+scale <- 1 # Scale of the initial value for stochastic gradient descent
+prop <- 0.75 # Proportion of informative samples
+plot <- TRUE # Whether to show the spiral data 
+NoiseX <- FALSE # Whether to corrupt the input vectors
 
 # Loading functions
 source("FeedForwardNN.R")
@@ -44,11 +44,13 @@ y_min <- min(X[,2])-0.2; y_max <- max(X[,2])+0.2
 # lets visualize the data:
 if(isTRUE(plot)){
   library(ggplot2)
-  ggplot(data) + geom_point(aes(x=x1, y=x2, color = as.character(label)), size = 2) + theme_bw(base_size = 15) +
+  ggplot(data) + geom_point(aes(x=x1, y=x2, color = as.character(label)), 
+                            size = 2) + theme_bw(base_size = 15) +
     xlim(x_min, x_max) + ylim(y_min, y_max) +
     ggtitle('Spiral data with five classes') +
     coord_fixed(ratio = 0.8) +
-    theme(axis.ticks=element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+    theme(axis.ticks=element_blank(), panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
           legend.position = 'none')+xlab("Coordinate 1") + ylab("Coordinate 2")
 }
 
@@ -90,7 +92,8 @@ for (i in 1:(dim(X)[1])){
 
 if (isTRUE(NoiseX)){
   noise <- sample(c(1:dim(X)[1]), floor((1-prop)*dim(X)[1]), replace = FALSE)
-  X[noise, ] <- X[noise, ] + matrix(rnorm(dim(X)[2]*length(noise), 0, 1), nrow=length(noise), ncol=dim(X)[2])
+  X[noise, ] <- X[noise, ] + matrix(rnorm(dim(X)[2]*length(noise), 0, 1), 
+                                    nrow=length(noise), ncol=dim(X)[2])
 }
 
 num.obs <- dim(X)[1]
@@ -108,10 +111,16 @@ set.seed(NULL)
 # Softmax  
 alpha <- 1e-2
 repeat{
-  Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=i.num,random=TRUE,batch=b,MOM=FALSE,k=3,loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=scale)
-  train.test <- FeedForwardNN(X,para=Pre_Para.softmax[[1]],class=TRUE,class.score=TRUE)
+  Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=i.num,random=TRUE,
+                              batch=b,MOM=FALSE,k=3,loss.f="ls",q=NULL,
+                              bias=TRUE,class=TRUE,beta=scale)
+  train.test <- FeedForwardNN(X,para=Pre_Para.softmax[[1]],class=TRUE,
+                              class.score=TRUE)
   
-  if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(any(is.na(train.test)))|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
+  if(any(is.na(train.test))|isTRUE(train.test=="NaN")|
+     isTRUE(any(is.na(train.test)))|isTRUE(is.na(train.test))|
+     isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|
+     isTRUE(identical(train.test,integer(0)))){
     alpha <- alpha/2
     next
   }else{
@@ -119,7 +128,8 @@ repeat{
   }
 }
 
-Prediction.class <- FeedForwardNN(X.test,para=Pre_Para.softmax[[1]],class=TRUE,class.score=FALSE)
+Prediction.class <- FeedForwardNN(X.test,para=Pre_Para.softmax[[1]],class=TRUE,
+                                  class.score=FALSE)
 alpha.softmax <- alpha
 LossTracking.ls <- Pre_Para.softmax[[2]]
 accuracy.softmax <- mean(Prediction.class==(CT))
@@ -132,10 +142,16 @@ LossTracking.mom <- list()
 for(i in 1:length(Blocks)){
   alpha <- 1e-2
   repeat{
-    Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=i.num,random=TRUE,batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=scale)
-    train.test <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,class.score=TRUE)
+    Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=i.num,random=TRUE,
+                            batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,
+                            bias=TRUE,class=TRUE,beta=scale)
+    train.test <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,
+                                class.score=TRUE)
     
-    if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(any(is.na(train.test)))|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
+    if(any(is.na(train.test))|isTRUE(train.test=="NaN")|
+       isTRUE(any(is.na(train.test)))|isTRUE(is.na(train.test))|
+       isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|
+       isTRUE(identical(train.test,integer(0)))){
       alpha <- alpha/2
       next
     }else{
@@ -143,7 +159,8 @@ for(i in 1:length(Blocks)){
     }
   }
   
-  Prediction.class.mom <- FeedForwardNN(X.test,para=Pre_Para.mom[[1]],class=TRUE,class.score=FALSE)
+  Prediction.class.mom <- FeedForwardNN(X.test,para=Pre_Para.mom[[1]],
+                                        class=TRUE,class.score=FALSE)
   LossTracking.mom[[i]] <- Pre_Para.mom[[2]]
   accuracy.mom <- mean(Prediction.class.mom==(CT))
   Prediction.mom <- c(Prediction.mom,accuracy.mom)
