@@ -20,15 +20,15 @@ scale <- 1 # Scale of the initial values for default stochastic gradient descent
 E <- 20000 # Number of epoch
 num.i <- floor(num.obs/b)*E # Number of gradeint updates
 
-# Loading functions
-source("FeedForwardNN.R")
-source("BackPropNN.R")
-source("TrainNN.R")
-source("GroupK.R")
-source("Mom.R")
-source("HuberLoss.R")
-source("HuberDerivative.R")
-source("L1Derivative.R")
+# Loading required functions
+source("./AdditionalFunctions/FeedForwardNN.R")
+source("./AdditionalFunctions/BackPropNN.R")
+source("./AdditionalFunctions/TrainNN.R")
+source("./AdditionalFunctions/GroupK.R")
+source("./AdditionalFunctions/Mom.R")
+source("./AdditionalFunctions/HuberLoss.R")
+source("./AdditionalFunctions/HuberDerivative.R")
+source("./AdditionalFunctions/L1Derivative.R")
 
 set.seed(2021313) # Set the random seed for reproducible research
 

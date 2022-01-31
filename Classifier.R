@@ -13,15 +13,15 @@ prop <- 0.75 # Proportion of informative samples
 plot <- TRUE # Whether to show the spiral data 
 NoiseX <- FALSE # Whether to corrupt the input vectors
 
-# Loading functions
-source("FeedForwardNN.R")
-source("BackPropN.R")
-source("TrainNN.R")
-source("Group.R")
-source("mom.R")
-source("huber_loss.R")
-source("huber_derivative.R")
-source("l1_derivative.R")
+# Loading required functions
+source("./AdditionalFunctions/FeedForwardNN.R")
+source("./AdditionalFunctions/BackPropNN.R")
+source("./AdditionalFunctions/TrainNN.R")
+source("./AdditionalFunctions/GroupK.R")
+source("./AdditionalFunctions/Mom.R")
+source("./AdditionalFunctions/HuberLoss.R")
+source("./AdditionalFunctions/HuberDerivative.R")
+source("./AdditionalFunctions/L1Derivative.R")
 ##################################
 X <- data.frame() # data matrix (each row = single example)
 C <- data.frame() # class labels
