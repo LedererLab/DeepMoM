@@ -3,24 +3,75 @@
 ########################
 
 # Settings
-num.obs <- 1000 # Number of samples
-num.par <- 50 # Dimension of input vector
-K <- 1 # Number of classes
-l <- 7 # Number of hidden layers (number of weight matrices-1)
-num.neurons <- 30 # Number of neurons in each hidden layer
-#min.neurons <- 5
-prop <- 0.95 # Proportion of the informative samples
-b <- floor(0.15*num.obs) # Batch size for stochastic gradient descent
-NoiseX <- FALSE # Whether to corrupt input vectors
-NoiseT <- FALSE # Whether to generate noise from t-distribution
-DF <- NULL # Degree of freedom of t-distribution
-num.sim <- 1 # Number of simulations times
-num.test <- num.obs # Number of testing samples
-scale <- 1 # Scale of the initial values for default stochastic gradient descent
-E <- 20000 # Number of epoch
-num.i <- floor(num.obs/b)*E # Number of gradeint updates
+
+## A positive integer indicates the numebr of samples.
+num.obs <- 1000 
+
+## A positive integer indicates the dimension of input vector. 
+num.par <- 50 
+
+## A positive integer indicates the numebr of classes.
+K <- 1 
+
+## A positive integer indicates the number of layers for the neural network.
+l <- 7 
+
+## A positive integer indicates the number of neurons in each hidden layer of 
+## the neural network.
+num.neurons <- 30 
+
+## A positive value within [0,1] indicates the propostion of informative 
+## samples.
+prop <- 0.95 
+
+## A positive value within [0,1] indicates the batch size for stochastic 
+## gradient descent algorithm.
+BatchSize <- 0.15
+
+## A Boolean value indicates whether to corrupt the input vectors. 
+NoiseX <- FALSE 
+
+## A Boolean value indicates whether to generate noise from t-distribution.
+NoiseT <- FALSE 
+
+## A positive integer indicates the degree of freedom of t-distribution
+DF <- NULL 
+
+## A positive integer indicates the number of simulations.
+num.sim <- 1
+
+## A positive integer indicates the number of testing samples.
+num.test <- num.obs 
+
+## A positive value to scale the initial values for updating the gradients of 
+## the neural network.
+scale <- 1 
+
+## A positive integer indicates the number of epoch to update the gradient of 
+## the neural network.
+E <- 30000 
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with softmax loss. 
+alphaSoftmax <- 1e-3
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with DeepMoM structure. 
+alphaMoM <- 1e-3
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with softmax loss. 
+alphaL1 <- 1e-5
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with softmax loss. 
+alphaHuber <- 1e-5
+
+## A vector of positive integers indicates the number of blocks for DeepMoM.
+Blocks <- c(3, 5, 7, 9, 11, 13, 15, 17)
 
 # Loading required functions
+
 source("./AdditionalFunctions/FeedForwardNN.R")
 source("./AdditionalFunctions/BackPropNN.R")
 source("./AdditionalFunctions/TrainNN.R")
@@ -113,13 +164,15 @@ for(s in 1:num.sim){
     y[-good] <- signal[-good] + u.bad
   }
   
+  b <- floor(BatchSize*num.obs)
+  num.i <- floor(num.obs/b)*E
   set.seed(NULL)
   
   # Training models
   
   # Ls  
   
-  alpha <- 1e-3
+  alpha <- alphaSoftmax
   repeat{
     Pre_Para.ls <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, random=TRUE, 
                            batch=b, MOM=FALSE, k=1, loss.f="ls", q=NULL, 
@@ -148,12 +201,12 @@ for(s in 1:num.sim){
   error.ls[[3]][[s]] <- alpha.ls
   
   # MOM 
-  Blocks <- c(3, 5, 7, 9, 11, 13, 15, 17)
+  
   Prediction.mom <- c()
   alpha.mom <- c() 
   LossTracking.mom <- list()
   for(i in 1:length(Blocks)){
-    alpha <- 1e-3
+    alpha <- alphaMoM
     repeat{
       Pre_Para.mom <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, 
                               random=TRUE, batch=b, MOM=TRUE, k=Blocks[i], 
@@ -187,8 +240,9 @@ for(s in 1:num.sim){
   error.mom[[1]][[s]] <- Prediction.mom
   error.mom[[3]][[s]] <- alpha.mom
   
-  # L1  
-  alpha <- 1e-6
+  # L1 
+  
+  alpha <- alphaL1
   repeat{
     Pre_Para.l1 <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, random=TRUE, 
                            batch=b, MOM=FALSE, k=NULL, loss.f="l1", q=NULL, 
@@ -217,12 +271,13 @@ for(s in 1:num.sim){
   error.l1[[3]][[s]] <- alpha.l1
   
   # Huber 
+  
   Q <- seq(0.75, 1.00, by=0.05)
   Prediction.huber <- c()
   alpha.huber <- c()
   LossTracking.huber <- list()
   for(i in 1:length(Q)){
-    alpha <- 1e-6
+    alpha <- alphaHuber
     qt <- as.numeric(quantile(abs(y), prob=Q[i]))
     repeat{
       Pre_Para.huber <- TrainNN(y, X, P=P, alpha=alpha, iteration=num.i, 
@@ -280,6 +335,7 @@ for(s in 1:num.sim){
 }
 
 # Predicted Results
+
 mean(E.ls)/mean(E.mom)
 mean(E.mom)/mean(E.mom)
 mean(E.l1)/mean(E.mom)

@@ -2,7 +2,7 @@
 #### Tcga Data Application ####
 ###############################
 
-# Setting
+# Settings
 
 ## A positive integer K for applying K-fold cross validation to select the 
 ## number of blocks in the DeepMoM.
@@ -19,7 +19,7 @@ l <- 2
 ## the neural network.
 E <- 20000
 
-## A positive value between (0,1) indicates the batch size for stochastic 
+## A positive value within [0,1] indicates the batch size for stochastic 
 ## gradient descent algorithm.
 BatchSize <- 0.15
 
@@ -47,6 +47,7 @@ seed1 <- 202101
 seed2 <- 202102
 
 # Loading required functions
+
 source("./AdditionalFunctions/FeedForwardNN.R")
 source("./AdditionalFunctions/BackPropNN.R")
 source("./AdditionalFunctions/TrainNN.R")
@@ -57,6 +58,7 @@ source("./AdditionalFunctions/HuberDerivative.R")
 source("./AdditionalFunctions/L1Derivative.R")
 
 # Loading Tcga Data
+
 load("./TcgaData/TcgaData.RData")
 
 # Initialization
@@ -101,7 +103,7 @@ data <- rbind(data_ov,
               data_laml)
 
 set.seed(seed1)
-data <- data[sample(c(1:dim(data)[1]), dim(data)[1], replace=FALSE),]
+data <- data[sample(c(1:dim(data)[1]), dim(data)[1], replace=FALSE), ]
 set.seed(seed2)
 
 set.seed(202102)
@@ -109,17 +111,17 @@ GG <- group(K, dim(data)[1])
 set.seed(NULL)
 
 for (sim in 1:K){
-  X <- as.matrix(data[,-1])
+  X <- as.matrix(data[, -1])
   
   for (i in 1:dim(X)[2]){
-    s <- sum(abs(X[,i]))
+    s <- sum(abs(X[, i]))
     if(isTRUE(s!=0)){
-      X[,i] <- as.vector(X[,i])/s*1e+6
+      X[, i] <- as.vector(X[, i])/s*1e+6
     }
   }
   
   X <- X/max(abs(X))
-  y <- as.vector(data[,1])
+  y <- as.vector(data[, 1])
   
   num.obs <- dim(X)[1]
   
@@ -131,7 +133,8 @@ for (sim in 1:K){
   X.test <- X[IndexT,]
   y.test <- y[IndexT]
   
-  ################################################################################
+  # Formalize outputs
+  
   C <- y.original
   CT <- y.test
   
@@ -156,15 +159,23 @@ for (sim in 1:K){
   P <- c(num.par,P,K)
   
   par(mfrow=c(1,1))
-  ################################################################################
   set.seed(NULL)
+  
   # Softmax
+  
   alpha <- alphaSoftmax
   repeat{
-    Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=FALSE,k=3,loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=scale,qs=NULL)
-    train.test <- FeedForwardNN(X,para=Pre_Para.softmax[[1]],class=TRUE,class.score=TRUE)
+    Pre_Para.softmax <- TrainNN(y=Y, X, P=P, alpha=alpha, iteration=num.i, 
+                                random=TRUE, batch=b, MOM=FALSE, k=3, 
+                                loss.f="ls", q=NULL, bias=TRUE, class=TRUE, 
+                                beta=scale, qs=NULL)
     
-    if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
+    train.test <- FeedForwardNN(X, para=Pre_Para.softmax[[1]], class=TRUE, 
+                                class.score=TRUE)
+    
+    if(any(is.na(train.test))|isTRUE(train.test=="NaN")|
+       isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|
+       isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
       alpha <- alpha/2
       next
     }else{
@@ -172,12 +183,14 @@ for (sim in 1:K){
     }
   }
   
-  Prediction.class <- FeedForwardNN(X.test,para=Pre_Para.softmax[[1]],class=TRUE,class.score=FALSE)
+  Prediction.class <- FeedForwardNN(X.test, para=Pre_Para.softmax[[1]], 
+                                    class=TRUE, class.score=FALSE)
   alpha.softmax <- alpha
   LossTracking.ls <- Pre_Para.softmax[[2]]
   accuracy.softmax <- mean(Prediction.class==(CT))
   
   # MOM 
+  
   b <- floor(num.obs*BatchSize)
   num.i <- floor(num.obs/b)*E
   
@@ -187,10 +200,16 @@ for (sim in 1:K){
   for(i in 1:length(Blocks)){
     alpha <- alphaMoM
     repeat{
-      Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=0.1*scale,qs=NULL)
-      train.test <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,class.score=TRUE)
+      Pre_Para.mom <- TrainNN(y=Y, X=X, P=P, alpha=alpha, iteration=num.i, 
+                              random=TRUE, batch=b, MOM=TRUE, k=Blocks[i], 
+                              loss.f="ls", q=NULL, bias=TRUE, class=TRUE, 
+                              beta=0.1*scale, qs=NULL)
+      train.test <- FeedForwardNN(X, para=Pre_Para.mom[[1]], class=TRUE, 
+                                  class.score=TRUE)
       
-      if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
+      if(any(is.na(train.test))|isTRUE(train.test=="NaN")|
+         isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|
+         isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
         alpha <- alpha/2
         next
       }else{
@@ -198,7 +217,8 @@ for (sim in 1:K){
       }
     }
     
-    Prediction.class.mom <- FeedForwardNN(X.test,para=Pre_Para.mom[[1]],class=TRUE,class.score=FALSE)
+    Prediction.class.mom <- FeedForwardNN(X.test, para=Pre_Para.mom[[1]], 
+                                          class=TRUE, class.score=FALSE)
     LossTracking.mom[[i]] <- Pre_Para.mom[[2]]
     accuracy.mom <- mean(Prediction.class.mom==(CT))
     Prediction.mom <- c(Prediction.mom,accuracy.mom)
