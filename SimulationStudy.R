@@ -22,13 +22,13 @@ num.i <- floor(num.obs/b)*E # Number of gradeint updates
 
 # Loading functions
 source("FeedForwardNN.R")
-source("BackPropN.R")
+source("BackPropNN.R")
 source("TrainNN.R")
-source("Group.R")
-source("mom.R")
-source("huber_loss.R")
-source("huber_derivative.R")
-source("l1_derivative.R")
+source("GroupK.R")
+source("Mom.R")
+source("HuberLoss.R")
+source("HuberDerivative.R")
+source("L1Derivative.R")
 
 set.seed(2021313) # Set the random seed for reproducible research
 

@@ -1,20 +1,68 @@
-num.sim <- 10
+###############################
+#### Tcga Data Application ####
+###############################
 
-# Loading functions
-source("~/Desktop/TCGA/Code/FeedForwardNN.R")
-source("~/Desktop/TCGA/Code/BackPropN.R")
-source("~/Desktop/TCGA/Code/TrainNN.R")
-source("~/Desktop/TCGA/Code/Group.R")
-source("~/Desktop/TCGA/Code/mom.R")
-source("~/Desktop/TCGA/Code/huber_loss.R")
-source("~/Desktop/TCGA/Code/huber_derivative.R")
-source("~/Desktop/TCGA/Code/l1_derivative.R")
+# Setting
 
-A.soft <- rep(0,num.sim)
-A.mom <- rep(0,num.sim)
+## A positive integer K for applying K-fold cross validation to select the 
+## number of blocks in the DeepMoM.
+K <- 10 
 
-#data <- as.matrix(read.csv("DataMiRna.csv", sep=","))
-load("~/Desktop/TCGA/data/TCGAlist.RData")
+## A positive integer indicates the number of neurons in each hidden layer of 
+## the neural network.
+num.neurons <- 150
+
+## A positive integer indicates the number of layers for the neural network.
+l <- 2
+
+## A positive integer indicates the number of epoch to update the gradient of 
+## the neural network.
+E <- 20000
+
+## A positive value between (0,1) indicates the batch size for stochastic 
+## gradient descent algorithm.
+BatchSize <- 0.15
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with softmax loss. 
+alphaSoftmax <- 1e-2
+
+## A positive value indicates the learning rate for the stochastic gradient 
+## descent algorithm with DeepMoM structure. 
+alphaMoM <- 1e-2
+
+## A vector of positive integers indicates the number of blocks for DeepMoM.
+Blocks <- c(3, 5, 7, 9, 11)
+
+## A positive value to scale the initial values for updating the gradients of 
+## the neural network.
+scale <- 1
+
+## A positive value to set the random seed for shuffling the data for 
+## reproducible research. 
+seed1 <- 202101
+
+## A positive value to set the random seed for shuffling the data for 
+## reproducible research. 
+seed2 <- 202102
+
+# Loading required functions
+source("./AdditionalFunctions/FeedForwardNN.R")
+source("./AdditionalFunctions/BackPropNN.R")
+source("./AdditionalFunctions/TrainNN.R")
+source("./AdditionalFunctions/GroupK.R")
+source("./AdditionalFunctions/Mom.R")
+source("./AdditionalFunctions/HuberLoss.R")
+source("./AdditionalFunctions/HuberDerivative.R")
+source("./AdditionalFunctions/L1Derivative.R")
+
+# Loading Tcga Data
+load("./TcgaData/TcgaData.RData")
+
+# Initialization
+
+A.soft <- rep(0, K)
+A.mom <- rep(0, K)
 
 X_ov <- as.matrix(TCGA.data$OV$RC)
 y_ov <- rep(1, dim(X_ov)[1])
@@ -36,69 +84,31 @@ X_skcm <- as.matrix(TCGA.data$SKCM$RC)
 y_skcm <- rep(5, dim(X_skcm)[1])
 data_skcm <- cbind(y_skcm, X_skcm)
 
-#X_acc <- as.matrix(TCGA.data$ACC$RC)
-#y_acc <- rep(6, dim(X_acc)[1])
-#data_acc <- cbind(y_acc, X_acc)
-
-
 X_esca <- as.matrix(TCGA.data$ESCA$RC)
 y_esca <- rep(6, dim(X_esca)[1])
 data_esca <- cbind(y_esca, X_esca)
 
-
-#X_ucs <- as.matrix(TCGA.data$UCS$RC)
-#y_ucs <- rep(8, dim(X_ucs)[1])
-#data_ucs <- cbind(y_ucs, X_ucs)
-
-
-
 X_laml <- as.matrix(TCGA.data$LAML$RC)
 y_laml <- rep(7, dim(X_laml)[1])
 data_laml <- cbind(y_laml, X_laml)
-
-
-#X_chol <- as.matrix(TCGA.data$CHOL$RC)
-#y_chol <- rep(10, dim(X_chol)[1])
-#data_chol <- cbind(y_chol, X_chol)
-
-
 
 data <- rbind(data_ov,
               data_sarc,
               data_kirc,
               data_luad,
               data_skcm,
-              #data_acc,
               data_esca,
-              #data_ucs,
-              #data_chol,
               data_laml)
 
-
-
-
-set.seed(202101)
-data <- data[sample(c(1:dim(data)[1]),dim(data)[1], replace=FALSE),]
-set.seed(NULL)
+set.seed(seed1)
+data <- data[sample(c(1:dim(data)[1]), dim(data)[1], replace=FALSE),]
+set.seed(seed2)
 
 set.seed(202102)
-GG <- group(num.sim, dim(data)[1])
+GG <- group(K, dim(data)[1])
 set.seed(NULL)
 
-num.neurons <- 150
-l <- 2
-check <- FALSE
-E <- 20000
-
-c.loss.soft <- 1e-100
-c.update.soft <- 1e-100
-
-c.loss.mom <- 1e-100
-c.update.mom <- 1e-100
-
-scale <- 1
-
-for (sim in 1:num.sim){
+for (sim in 1:K){
   X <- as.matrix(data[,-1])
   
   for (i in 1:dim(X)[2]){
@@ -138,7 +148,7 @@ for (sim in 1:num.sim){
   num.obs <- dim(X)[1]
   num.par <- dim(X)[2]
   
-  b <- floor(num.obs*0.15)
+  b <- floor(num.obs*BatchSize)
   
   num.i <- floor(num.obs/b)*E
   
@@ -149,9 +159,9 @@ for (sim in 1:num.sim){
   ################################################################################
   set.seed(NULL)
   # Softmax
-  alpha <- 1e-2
+  alpha <- alphaSoftmax
   repeat{
-    Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,stop.i.loss=c.loss.soft,stop.i.update=c.update.soft,MOM=FALSE,k=3,loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=scale,qs=NULL)
+    Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=FALSE,k=3,loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=scale,qs=NULL)
     train.test <- FeedForwardNN(X,para=Pre_Para.softmax[[1]],class=TRUE,class.score=TRUE)
     
     if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
@@ -163,25 +173,21 @@ for (sim in 1:num.sim){
   }
   
   Prediction.class <- FeedForwardNN(X.test,para=Pre_Para.softmax[[1]],class=TRUE,class.score=FALSE)
-  #Prediction.class <- Prediction.class-1
   alpha.softmax <- alpha
   LossTracking.ls <- Pre_Para.softmax[[2]]
   accuracy.softmax <- mean(Prediction.class==(CT))
   
-  save.image(paste0(sim, "ls.RData"))
-  
   # MOM 
-  b <- floor(num.obs*0.15)
+  b <- floor(num.obs*BatchSize)
   num.i <- floor(num.obs/b)*E
   
-  Blocks <- c(3,5,7,9,11)
   Prediction.mom <- c()
   alpha.mom <- c() 
   LossTracking.mom <- list()
   for(i in 1:length(Blocks)){
-    alpha <- 1e-2
+    alpha <- alphaMoM
     repeat{
-      Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,stop.i.loss=c.loss.mom,stop.i.update=c.update.mom,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=0.1*scale,qs=NULL)
+      Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=num.i,random=TRUE,batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,bias=TRUE,class=TRUE,beta=0.1*scale,qs=NULL)
       train.test <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,class.score=TRUE)
       
       if(any(is.na(train.test))|isTRUE(train.test=="NaN")|isTRUE(is.na(train.test))|isTRUE(train.test==Inf)|isTRUE(train.test==-Inf)|isTRUE(identical(train.test,integer(0)))){
@@ -193,16 +199,11 @@ for (sim in 1:num.sim){
     }
     
     Prediction.class.mom <- FeedForwardNN(X.test,para=Pre_Para.mom[[1]],class=TRUE,class.score=FALSE)
-    #Prediction.class.mom <- Prediction.class.mom-1
     LossTracking.mom[[i]] <- Pre_Para.mom[[2]]
     accuracy.mom <- mean(Prediction.class.mom==(CT))
     Prediction.mom <- c(Prediction.mom,accuracy.mom)
     alpha.mom <- c(alpha.mom,alpha)
-    save.image(paste0(Blocks[i],sim, "mom.RData"))
   }
-  
-  #accuracy.softmax
-  #max(Prediction.mom)
   
   A.soft[sim] <- accuracy.softmax
   A.mom[sim] <- max(Prediction.mom)
@@ -210,9 +211,3 @@ for (sim in 1:num.sim){
 
 mean(A.soft)
 mean(A.mom)
-
-
-#save.image("all.RData")
-
-class.mom <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,class.score=FALSE)
-mean(class.mom==(C))
