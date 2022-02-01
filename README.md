@@ -7,7 +7,7 @@ This repository provides the corresponding implementations.
 ## Simulations
 
 The code in `SimulationsRegression.R` provides a comparison of least-squares, Huber, and least-absolute deviation estimators to our ReLU-based DeepMoM estimators in regression problems;
-the code in `SimulationsClassification.R` provides a comparison of soft-max cross-entropy estimators to our ReLU-based DeepMoM estimators in classification problems. 
+the code in `SimulationsClassification.R` provides a comparison of soft-max cross-entropy estimators to our ReLU-based DeepMoM estimators in classification problems. (The simulation take a while to complete.)
 
 ## Applications
 
