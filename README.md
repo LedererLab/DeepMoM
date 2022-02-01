@@ -11,7 +11,7 @@ the code in `SimulationsClassification.R` provides a comparison of soft-max cros
 
 ## Applications
 
-The code in `TcgaApplication.R` applies DeepMoM to seven TCGA data sets.
+The code in `TcgaApplication.R` applies DeepMoM to seven TCGA data sets. (Takes a while to complete.)
 
 ## Other folders
 
