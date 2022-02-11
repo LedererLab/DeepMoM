@@ -41,4 +41,4 @@ view the MIT license please consult `LICENSE.txt`.
 ## References
  The paper can be found here: [DeepMoM: Robust Deep Learning With Median-of-Means](https://arxiv.org/abs/2105.14035)
  
- It should be cited as "Huang, S.T. and Lederer, J., 2021. DeepMoM: Robust Deep Learning With Median-of-Means. arXiv:2105.14035."
+ It should be cited as "Huang, S.-T. and Lederer, J., 2021. DeepMoM: Robust Deep Learning With Median-of-Means. arXiv:2105.14035."
