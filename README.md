@@ -17,7 +17,7 @@ The code in `TcgaApplication.R` applies DeepMoM to seven TCGA data sets. (Takes 
 
 **AdditionalFunctions**: The source code of the functions required for computing DeepMoM.
 
-**TcgaData**: The TCGA data sets. 
+**TcgaData**: A tutorial R markdown file for downloading TCGA datasets.   
 
 ## Repository authors 
 
