@@ -1,0 +1,161 @@
+---
+title: "TcgaDataDownload"
+author: "Shih-Ting Huang"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup and Libraries
+
+First, we set up a configuration list. This allowes us to easily modify settings; for example, set `config$download` to `TRUE` if the data files need to be downloaded. Remember to *always set the working directory* and the paths to the data/external files prior to running the code.
+
+```{r configuration}
+config <- list(
+  # working directory
+  working.dir = "~/Desktop/TCGA/DeepMoM-main",  # working directory
+  download = TRUE,  # download data?
+  write.output = TRUE,  # save data?
+  output.file = "TCGA_harmonized_data.RData"  # filename for data output
+)
+```
+
+Data on GDC can be explored using the `TCGAbiolinks` package from `BiocManager` (Bioconductor). It can be installed using the following command.
+
+```{r install.GenomicDataCommons, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("TCGAbiolinks")
+
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("edgeR")
+
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("RTCGA")
+```
+
+We load all required libraries, check the connection to the GDC data base and set the working directory.
+
+```{r load.libraries, message=FALSE, warning=FALSE}
+# Libraries
+library(TCGAbiolinks)
+#library(dplyr)
+#library(DT)
+#library(vroom)
+library(edgeR)
+library(RTCGA)
+# Set working directory
+setwd(config$working.dir)
+```
+
+## Function for donwloading from a generic TCGA project
+
+```{r function.download.data}
+
+getTCGAData <- function(project, download=TRUE) {
+  cat("Getting data for TCGA project: ", project, "\n")
+  ## Clinical data
+  cat("   ->[1/4] Downloading clinical data...")
+  clin <- GDCquery_clinic(project, type = "clinical", save.csv = FALSE)
+  rownames(clin) <- clin$submitter_id
+  clin <- clin[!duplicated(rownames(clin)), ] 
+  
+  
+  ## Download Data
+  cat("...done\n   ->[2/4] Downloading count data...")
+  # Query all TCGA-SARC miRNA Expression Data
+  query <- GDCquery(project = project,
+                    data.category = "Transcriptome Profiling", 
+                    data.type = "miRNA Expression Quantification", 
+                    legacy = FALSE)
+  # Download
+  if(download) GDCdownload(query)
+  # Generate full data set
+  raw.data <- GDCprepare(query)
+  
+  
+  cat("...done\n   ->[3/4] Garbage Collection...")
+  invisible(gc())
+  
+  ## Organize Data
+  cat("...done\n   ->[4/4] Organizing data...")
+  
+  # Organize into Read-Count (RC) matrix
+  genes <- raw.data$miRNA_ID
+  rownames(raw.data) <- genes
+  RC <- data.matrix(as.data.frame(raw.data[, substr(colnames(raw.data), 1, 11)=="read_count_"])) 
+  rm(raw.data, query)
+  # remove "read_count_" prefix
+  colnames(RC) <- substr(colnames(RC), 12, 80) 
+  # remove replicate samples if found
+  RC <- RC[, !duplicated(substr(colnames(RC), 1, 12))]  
+  # Shorten barcode
+  colnames(RC) <- substr(colnames(RC), 1, 12)
+  # Transpose matrix to format n x p
+  RC <- t(RC)
+  
+  # Remove any data that is only present in clinical or count data
+  clin <- clin[rownames(clin) %in% rownames(RC), ]
+  RC <- RC[ , rownames(RC) %in% rownames(clin)]
+  
+  cat("...done\n")
+  cat("...download finished for project ", project, "\n")
+  # Export as data list
+  return(list(RC=RC, clinical=clin))
+}
+
+```
+
+## Download data from various projects
+
+Be aware that downloading the data takes an *insane* amount of memory.
+The `gc()` (garbage collection) is necessary for freeing up memory in between.
+
+```{r download.data}
+# Download data from TCGA
+OV <- getTCGAData(project="TCGA-OV", download=config$download)  # Ovarian
+invisible(gc())  # Garbage Collection
+
+SARC <- getTCGAData(project="TCGA-SARC", download=config$download)  # Sarcoma
+invisible(gc())  # Garbage Collection
+
+SKCM <- getTCGAData(project="TCGA-SKCM", download=config$download)  # Skin
+invisible(gc())  # Garbage Collection
+
+LUAD <- getTCGAData(project="TCGA-LUAD", download=config$download)  # Bronchus/Lung
+invisible(gc())  # Garbage Collection
+
+KIRC <- getTCGAData(project="TCGA-KIRC", download=config$download)  # Kidney
+invisible(gc())  # Garbage Collection
+
+ESCA <- getTCGAData(project="TCGA-ESCA", download=config$download)  # Kidney
+invisible(gc())  # Garbage Collection
+
+LAML <- getTCGAData(project="TCGA-LAML", download=config$download)  # Kidney
+invisible(gc())  # Garbage Collection
+
+# Save data into single list
+TCGA.data <- list(
+  OV=OV,
+  SARC=SARC,
+  SKCM=SKCM,
+  LUAD=LUAD,
+  KIRC=KIRC,
+  ESCA=ESCA,
+  LAML=LAML
+)
+
+if(config$write.output) {
+  save(TCGA.data, file=config$output.file)
+}
+
+save.image("./TcgaData/TcgaData2.RData")
+```
