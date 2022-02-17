@@ -21,9 +21,9 @@ The code in `TcgaApplication.R` applies DeepMoM to seven TCGA data sets. (Takes 
 
 ## Repository authors 
 
-* [Shih-Ting Huang](https://johanneslederer.com/team/), Ph.D. student in Mathematical Statistics, Ruhr-University Bochum
+* [Shih-Ting Huang](https://johanneslederer.com/team/), Ph.D. student of Mathematical Statistics, Ruhr-University Bochum
 
-* [Johannes Lederer](https://johanneslederer.com), Professor in Mathematical Statistics, Ruhr-University Bochum
+* [Johannes Lederer](https://johanneslederer.com), Professor of Mathematical Statistics, Ruhr-University Bochum
 
 ## Programing language and supported platforms
 
