@@ -2,16 +2,15 @@
 ### Train Neural Network ###
 ############################
 
-TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL, 
-                    MOM=FALSE, k=NULL, loss.f=NULL, q=NULL, bias=FALSE, 
-                    class=FALSE, beta=1, qs=NULL){
+TrainNN <- function(y, X, P=P, para=NULL, alpha, iteration, random=TRUE, 
+                    batch=NULL, MOM=FALSE, k=NULL, loss.f=NULL, q=NULL, 
+                    bias=FALSE, class=FALSE, beta=1, qs=NULL){
   # Description :
   #               Train the neural network under the DeepMoM structure.   
   # Usage : 
-  #         TrainNN(y, X, P=P, alpha,iteration, random=TRUE, batch=NULL, 
-  #                 stop.i.loss=1e-5, stop.i.update=1e-5, MOM=FALSE, k=NULL, 
-  #                 loss.f=NULL, q=NULL, bias=FALSE, class=FALSE, beta=1, 
-  #                 qs=NULL)
+  #         TrainNN(y, X, P=P, para=NULL, alpha, iteration, random=TRUE, 
+  #                 batch=NULL, MOM=FALSE, k=NULL, loss.f=NULL, q=NULL, 
+  #                 bias=FALSE, class=FALSE, beta=1, qs=NULL)
   # Arguments : 
   #   y : A vector of dimension c represents the output layer of the neural 
   #       network.
@@ -19,6 +18,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
   #       neural network.
   #   P : A vector indicates the number of neurons in each layer of the neural 
   #       network.
+  #   para : Whether to assign specific initial values for gradient updates.
   #   alpha : A numerical value represents the learning rate for the gradient 
   #           descent algorithm.
   #   iteration : A numerical value represents the limit of gradient updates.
@@ -59,6 +59,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
     }
   }
   
+  alpha.original <- alpha
   X.original <- X
   y.original <- y
   if(isTRUE(class)){
@@ -66,26 +67,46 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
   }
   alpha.original <- alpha
   
+  parameter.initial <- isTRUE(is.null(para))
+  
   # Initial values
-  para <- list()
+  if(isTRUE(parameter.initial)){
+    para <- list()
+  }
   
   Psum <- c()
-  for(i in 1:(l+1)){
-    para[[i]] <- list()
-    para[[i]][[1]] <- beta*matrix(rnorm(P[i]*P[i+1],0,1),nrow=P[i])
-    Psum <- c(Psum,sum(abs(para[[i]][[1]])^2))
+  if(isTRUE(parameter.initial)){
+    for(i in 1:(l+1)){
+      para[[i]] <- list()
+      para[[i]][[1]] <- beta*matrix(rnorm(P[i]*P[i+1],0,1),nrow=P[i])
+      
+      Psum <- c(Psum,sum(abs(para[[i]][[1]])^2))
+    }
+  }else{
+    for(i in 1:(l+1)){
+      Psum <- c(Psum,sum(abs(para[[i]][[1]])^2))
+    }
   }
   
+  
   Psum2 <- c()
-  for(i in 1:(l+1)){
-    if(isTRUE(bias)){
-      para[[i]][[2]] <- rep(0,P[(i+1)])
-    }else{
-      para[[i]][[2]] <- rep(0,P[(i+1)])
+  if(isTRUE(parameter.initial)){
+    for(i in 1:(l+1)){
+      if(isTRUE(bias)){
+        para[[i]][[2]] <- rep(0,P[(i+1)])
+      }else{
+        para[[i]][[2]] <- rep(0,P[(i+1)])
+      }
+      para[[i]][[2]] <- matrix(rep(para[[i]][[2]],num.obs),nrow=num.obs,byrow=TRUE)
+      
+      Psum2 <- c(Psum2,sum(abs(para[[i]][[2]])^2))
     }
-    para[[i]][[2]] <- matrix(rep(para[[i]][[2]],num.obs),nrow=num.obs,byrow=TRUE)
-    Psum2 <- c(Psum2,sum(abs(para[[i]][[2]])^2))
+  }else{
+    for(i in 1:(l+1)){
+      Psum2 <- c(Psum2,sum(abs(para[[i]][[2]])^2))
+    }
   }
+  
   
   if(isTRUE(class==0)){
     M <- max(abs(FeedForwardNN(X=X,para=para,class=class,class.score=FALSE)))
@@ -160,6 +181,8 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
   }
   
   for(i in 1:iteration){
+    #alpha <- alpha.original*exp(-(1e-5*5)*(i-1))
+    
     # Reverse original dataset
     X <- X.original
     y <- y.original
@@ -170,7 +193,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       classIndex <- classIndex.original
     }
     
-    plot(NULL, xlim=c(0,1), ylim=c(0,1), ylab="y label", xlab="x lablel")
+    #plot(NULL, xlim=c(0,1), ylim=c(0,1), ylab="y label", xlab="x lablel")
     
     #Stochastic sample
     if(isTRUE(random==TRUE)){
@@ -179,11 +202,13 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       }
       
       if(isTRUE(MOM==TRUE)){
-        if(isTRUE(i<=floor(dim(X)[1]/batch))){
-          index <- Index[[i]]
-        } else {
-          index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
-        }
+        #if(isTRUE(i<=floor(dim(X)[1]/batch))){
+        #  index <- Index[[i]]
+        #} else {
+        #  index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
+        #}
+        
+        index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
         
         if(isTRUE(class)){
           classIndex <- classIndex[index]
@@ -207,11 +232,13 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
           para2[[j]][[2]] <- matrix(rep(B.trim,length(index)),nrow=length(index),byrow=TRUE)
         }
       }else{
-        if(isTRUE(i<=floor(dim(X)[1]/batch))){
-          index <- Index[[i]]
-        } else {
-          index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
-        }
+        #if(isTRUE(i<=floor(dim(X)[1]/batch))){
+        #  index <- Index[[i]]
+        #} else {
+        #  index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
+        #}
+        
+        index <- Index[[(i%%floor(dim(X)[1]/batch)+1)]]
         
         if(isTRUE(class)){
           classIndex <- classIndex[index]
@@ -273,11 +300,11 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       if(isTRUE(class)&isTRUE(i%%epoch==0)){
         print(paste("Epoch", (i/epoch),': loss.softmax', (sum(A[(i+1-epoch):i]))))
       }else{
-        if(isTRUE(loss.f=="ls")&isTRUE(i%%epoch==0)){
+        if(isTRUE(loss.f=="ls")&isTRUE(i%%(1*epoch)==0)&isTRUE(i>(1*epoch))){
           print(paste("Epoch", (i/epoch),': loss.ls', sum(L[(i+1-epoch):i])))
-        }else if(isTRUE(loss.f=="l1")&isTRUE(i%%epoch==0)){
+        }else if(isTRUE(loss.f=="l1")&isTRUE(i%%(1*epoch)==0)&isTRUE(i>(1*epoch))){
           print(paste("Epoch", (i/epoch),': loss.l1', sum(L[(i+1-epoch):i])))
-        }else if(isTRUE(loss.f=="huber")&isTRUE(i%%epoch==0)){
+        }else if(isTRUE(loss.f=="huber")&isTRUE(i%%(1*epoch)==0)&isTRUE(i>(1*epoch))){
           print(paste("Epoch", (i/epoch),paste0(": loss.huber", qs), sum(L[(i+1-epoch):i])))
         }
       }
@@ -292,7 +319,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         }
       }else{
         if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-          if(isTRUE(sum(L[(i+1-epoch):i])<=(1))){
+          if(isTRUE(sum(L[(i+1-epoch):i])<=(1e-3))){
             break
           }
         }
@@ -353,6 +380,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       }else{
         L.mom1 <- sum((y-FeedForwardNN(X=X,para=para,class=class,class.score=FALSE))^2)
         L.mom <- c(L.mom, L.mom1)
+        IC.mom <- c(IC.mom, length(index))
       }
       
       if(isTRUE(L.mom[i]=="NaN")|isTRUE(L.mom[i]==Inf)|isTRUE(L.mom[i]==-Inf)|isTRUE(is.na(L.mom[i]))){
@@ -367,8 +395,8 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       
       if(isTRUE(class)&isTRUE(i%%epoch==0)){
         print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(A.mom[(i+1-epoch):i])/sum(IC.mom[(i+1-epoch):i]))))
-      }else if(isTRUE(i%%epoch==0)){
-        print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(L.mom[(i+1-epoch):i]))))
+      }else if(isTRUE(i%%(1*epoch)==0)){
+        print(paste("Epoch", (i/epoch), paste0(": loss.mom", k), (sum(L.mom[(i+1-epoch):i])/sum(IC.mom[(i+1-epoch):i]))))
       }
       
       # First bias parameters 
@@ -473,13 +501,13 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
         }
       }else{
         if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-          if(isTRUE(sum(L.mom[(i+1-epoch):i])<=(1))){
+          if(isTRUE((sum(L.mom[(i+1-epoch):i])/sum(IC.mom[(i+1-epoch):i]))<=(1e-3))){
             break
           }
         }
         
         if(isTRUE(i>epoch)&isTRUE(i%%epoch==0)){
-          if(isTRUE(sum(L2.mom[(i+1-epoch):i])<=(1))){
+          if(isTRUE((sum(L2.mom[(i+1-epoch):i])/sum(IC.mom[(i+1-epoch):i]))<=(1e-3))){
             break
           }
         }
@@ -489,7 +517,7 @@ TrainNN <- function(y, X, P=P, alpha, iteration, random=TRUE, batch=NULL,
       back <- BackPropNN(y=y,X=X,para=para,alpha=alpha,loss.f=loss.f,q=q,bias=bias,class=class)
       para <- back[[1]]
       update.par1 <- c(update.par1,sum(back[[2]]))
-    
+      
       # Reverse second parameters
       for(j in 1:length(para)){
         B <- as.vector(para[[j]][[2]][1,])
