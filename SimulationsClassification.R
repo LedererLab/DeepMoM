@@ -19,29 +19,29 @@ l <- 2
 
 ## A positive value within [0,1] indicates the propostion of informative 
 ## samples.
-prop <- 0.75 
+prop <- 1 
 
 ## A Boolean value indicates whether to corrupt the input vectors.
 NoiseX <- FALSE 
 
 ## A positive value within [0,1] indicates the batch size for stochastic 
 ## gradient descent algorithm.
-BatchSize <- 0.15
+BatchSize <- 1
 
 ## A positive integer indicates the number of epoch to update the gradient of 
 ## the neural network.
-E <- 20000
+E <- 2000
 
 ## A positive value indicates the learning rate for the stochastic gradient 
 ## descent algorithm with softmax loss. 
-alphaSoftmax <- 1e-2
+alphaSoftmax <- 1e-1
 
 ## A positive value indicates the learning rate for the stochastic gradient 
 ## descent algorithm with DeepMoM structure. 
-alphaMoM <- 1e-2
+alphaMoM <- 1e-1
 
 ## A vector of positive integers indicates the number of blocks for DeepMoM.
-Blocks <- c(3, 5, 7, 9, 11, 13, 15, 17)
+Blocks <- c(3, 5, 7, 9, 11)
 
 ## A positive value to scale the initial values for updating the gradients of 
 ## the neural network.
@@ -123,9 +123,11 @@ for (i in 1:(dim(X)[1])){
 
 if (isTRUE(NoiseX)){
   noise <- sample(c(1:dim(X)[1]), floor((1-prop)*dim(X)[1]), replace = FALSE)
-  X[noise, ] <- X[noise, ] + matrix(rnorm(dim(X)[2]*length(noise), 0, 1), 
+  X[noise, ] <- matrix(rnorm(dim(X)[2]*length(noise), 5, 1), 
                                     nrow=length(noise), ncol=dim(X)[2])
 }
+
+X[noise, ] <- as.matrix(X[noise, ])/max(abs(X[noise, ]))
 
 num.obs <- dim(X)[1]
 num.par <- dim(X)[2]
@@ -142,10 +144,10 @@ set.seed(NULL)
 
 alpha <- alphaSoftmax
 repeat{
-  Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=i.num,random=TRUE,
+  Pre_Para.softmax <- TrainNN(y=Y,X,P=P,alpha=alpha,iteration=i.num,random=FALSE,
                               batch=b,MOM=FALSE,k=3,loss.f="ls",q=NULL,
-                              bias=TRUE,class=TRUE,beta=scale)
-  train.test <- FeedForwardNN(X,para=Pre_Para.softmax[[1]],class=TRUE,
+                              bias=TRUE,class=TRUE,beta=scale, para=NULL)
+  train.test <- FeedForwardNN(X, para=Pre_Para.softmax[[1]], class=TRUE,
                               class.score=TRUE)
   
   if(any(is.na(train.test))|isTRUE(train.test=="NaN")|
@@ -173,9 +175,9 @@ LossTracking.mom <- list()
 for(i in 1:length(Blocks)){
   alpha <- alphaMoM
   repeat{
-    Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=i.num,random=TRUE,
+    Pre_Para.mom <- TrainNN(y=Y,X=X,P=P,alpha=alpha,iteration=i.num,random=FALSE,
                             batch=b,MOM=TRUE,k=Blocks[i],loss.f="ls",q=NULL,
-                            bias=TRUE,class=TRUE,beta=scale)
+                            bias=TRUE,class=TRUE,beta=scale, para=NULL)
     train.test <- FeedForwardNN(X,para=Pre_Para.mom[[1]],class=TRUE,
                                 class.score=TRUE)
     
@@ -200,4 +202,9 @@ for(i in 1:length(Blocks)){
 
 accuracy.softmax
 max(Prediction.mom)
+
+#save.image("100.RData")
+
+
+
 
